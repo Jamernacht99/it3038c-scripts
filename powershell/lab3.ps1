@@ -1,8 +1,8 @@
-﻿$CurrentDate = Get-Date -Format "dddd, MMMM d yyyy"
-$PSVERSION = $PSVersionTable.PSVersion
+﻿$CurrentDate = Get-Date -Format "dddd, MMMM d, yyyy"
+$PSVERSION = $PSVersionTable.PSVersion.Major
 $USER = $env:USERNAME
 $HOSTNAME = $env:COMPUTERNAME
-$IPADDRESS = (Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' }).IPAddress
+$IPADDRESS = (Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' -and $_.IPAddress -notlike '127.*' }).IPAddress
 $Recipients = @("lamjs@mail.uc.edu", "leonardf@ucmail.uc.edu")
 
 
@@ -12,7 +12,6 @@ Write-Output "Recipients = "
 Write-Output $Recipients
 Write-Output "`n"
 
-#
 #Send-MailMessage -To "$Recipients" -From "jlam8931@gmail.com" -Subject "IT3038C Windows SysInfo" -Body $BODY -SmtpServer smtp.gmail.com -port 587 -UseSSL -Credential (Get-Credential) 
 
 $BODY | Set-content -Path "C:it3038c-scripts\powershell\bodyOuput.txt"
