@@ -1,0 +1,1 @@
+This machine's IP is 192.168.33.67 127.0.0.1. User is Administrator. Hostname is DESKTOP-099UQRG. PowerShell Version 5.1.19041.3031. Today's Date is Sunday, September 17 2023
