@@ -1,8 +1,16 @@
 # MARKDOWN EXAMPLE
+<<<<<<< HEAD
 
 ======
 
 [Welcome to My App] (https://github.com/Jamernacht99/it3038c-scripts/blob/main/README.md#markdown-example)
+=======
+---
+
+======
+
+[Welcome to My App](https://github.com/Jamernacht99/it3038c-scripts/blob/main/READEME.md#MARKDOWN EXAMPLE)
+>>>>>>> main
 
 ======
 
