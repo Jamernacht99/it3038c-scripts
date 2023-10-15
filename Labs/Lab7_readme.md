@@ -1,6 +1,6 @@
 # Lab 7 - Working with 7-Zip Archives
 
-Hi, today I'll show you how to use py7zr, a python package for 7zip file archiving, in python.
+Hi, today I'll show you how to use py7zr, a python package for 7zip file archiving, in Powershell.
 Remember to replace "/path/to/file" with the actual file path you want to archive, and ensure you adapt the paths and filenames to your specific desire.
 
 ## Step 1. Set Up a Virtual Environment
