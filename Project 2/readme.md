@@ -9,7 +9,7 @@ After downloading the files in this folder, run the command:
 
     pip install -r requirements.txt
 
-This will automatically ensure all required modules are installed. After this, run this command for the actual program:
+This will automatically ensure all required modules are installed. After this, run this command for the actual script:
 
     python.exe project2.py
 Afterwards, the script should open a small window, from which it can be positioned into the most favorable spot for one's desired effect.
