@@ -4,6 +4,20 @@ from tkinter import ttk
 from datetime import datetime
 from tkcalendar import Calendar
 
+def update_activity_tree(activity_tree, card_name, activity_data):
+    # Load the updated activities and clear the current treeview
+    activity_tree.delete(*activity_tree.get_children())
+    activities = load_activities(card_name)
+
+    # Insert updated activities into the treeview
+    for activity in activities:
+        activity_tree.insert("", "end", values=(activity['date'], activity['amount'], activity['type'], activity['description']))
+
+# Function remains unchanged
+def add_activity():
+    # Body of add_activity function remains the same
+    pass  # Replace 'pass' with the actual implementation
+
 def display_home():
     welcome_label.config(text="Welcome to Finance Tracker!")
     hide_cards()
@@ -26,11 +40,11 @@ def select_option(option):
         print(f"Selected: {option}")
 
 def show_cards():
-    card_info_frame.pack(side=tk.TOP)  # Position the frame 1 quarter from the top
+    card_info_frame.pack(side=tk.TOP)
     load_cards()
 
 def hide_cards():
-    card_info_frame.pack_forget()  # Hide the frame containing card information
+    card_info_frame.pack_forget()
 
 def load_cards():
     try:
@@ -38,7 +52,7 @@ def load_cards():
             card_info = json.load(file)
             display_cards(card_info)
     except FileNotFoundError:
-        display_cards([])  # Display an empty table if no cards exist
+        display_cards([])
 
 def display_activity_detail(card_name):
     detail_window = tk.Toplevel(root)
@@ -57,7 +71,7 @@ def display_activity_detail(card_name):
 
     activity_tree.pack(expand=True, fill=tk.BOTH)
 
-    add_activity_button = tk.Button(detail_window, text="Add Activity", command=lambda: display_add_activity_prompt(card_name))
+    add_activity_button = tk.Button(detail_window, text="Add Activity", command=lambda: display_add_activity_prompt(card_name, activity_tree))
     add_activity_button.pack()
 
 def load_activities(card_name):
@@ -74,7 +88,6 @@ def save_activities(card_name, activities):
 def on_select_card(event):
     selected_item = card_tree.focus()
     card_name = card_tree.item(selected_item)['values'][0]
-
     display_activity_detail(card_name)
 
 def display_cards(card_info):
@@ -94,8 +107,7 @@ def display_cards(card_info):
         next_due_date = get_next_due_date(card['due_date'])
         card_tree.insert("", "end", values=(card['name'], card['balance'], next_due_date))
 
-    card_tree.bind("<Double-1>", on_select_card)  # Bind double-click event to the card_tree
-
+    card_tree.bind("<Double-1>", on_select_card)
     card_tree.pack(expand=True, fill=tk.BOTH)
 
     add_card_button = tk.Button(card_info_frame, text="Add Card", command=display_add_card_prompt)
@@ -128,24 +140,22 @@ def display_add_card_prompt():
     due_date_label = tk.Label(add_card_window, text="Due Date (DD):")
     due_date_label.pack(padx=10, pady=5)
     
-    # Create a Calendar widget to select the due date
     cal = Calendar(add_card_window, selectmode="day", date_pattern="dd/MM/yyyy")
     cal.pack(padx=10, pady=5)
 
     def get_due_date():
-        due_date = cal.get_date().split("/")[0]  # Extract only the day from the selected date
+        due_date = cal.get_date().split("/")[0]
         add_card(name_entry.get(), due_date, add_card_window)
 
     add_button = tk.Button(add_card_window, text="Add Card", command=get_due_date)
     add_button.pack(padx=10, pady=10)
 
-def display_add_activity_prompt(card_name):
+def display_add_activity_prompt(card_name, activity_tree):
     add_activity_window = tk.Toplevel(root)
     add_activity_window.title(f"Add Activity for {card_name}")
 
     date_label = tk.Label(add_activity_window, text="Date:")
     date_label.pack(padx=10, pady=5)
-    # Create a Calendar widget to select the date
     cal = Calendar(add_activity_window, selectmode="day", date_pattern="dd/MM/yyyy")
     cal.pack(padx=10, pady=5)
 
@@ -156,7 +166,6 @@ def display_add_activity_prompt(card_name):
             if '.' not in value:
                 float(value + '.00')
                 return True
-            # Otherwise, validate the input as usual
             else:
                 float(value)
                 if value.count(".") <= 1:
@@ -176,7 +185,7 @@ def display_add_activity_prompt(card_name):
     type_label = tk.Label(add_activity_window, text="Type:")
     type_label.pack(padx=10, pady=5)
     type_var = tk.StringVar(add_activity_window)
-    type_var.set("Credit")  # Default value
+    type_var.set("Credit")
     type_dropdown = tk.OptionMenu(add_activity_window, type_var, "Credit", "Debit")
     type_dropdown.pack(padx=10, pady=5)
 
@@ -188,28 +197,27 @@ def display_add_activity_prompt(card_name):
     def add_activity():
         entered_amount = amount_entry.get()
         if '.' not in entered_amount:
-            entered_amount += '.00'  # Append ".00" if no decimal is present
+            entered_amount += '.00'
 
         activity_data = {
             "date": cal.get_date(),
             "amount": entered_amount,
-        "type": type_var.get(),
-        "description": description_entry.get()
-    }
+            "type": type_var.get(),
+            "description": description_entry.get()
+        }
 
         save_activity(card_name, activity_data)
+        update_activity_tree(activity_tree, card_name, activity_data)
         add_activity_window.destroy()
-        display_activity_detail(card_name)  # Refresh the activity list after adding
-
 
     add_activity_button = tk.Button(add_activity_window, text="Add Activity", command=add_activity)
     add_activity_button.pack(padx=10, pady=10)
-
 
 def save_activity(card_name, activity_data):
     activities = load_activities(card_name)
     activities.append(activity_data)
     save_activities(card_name, activities)
+
 def create_menu():
     global root, card_info_frame
     root = tk.Tk()
@@ -235,7 +243,7 @@ def create_menu():
     welcome_label = tk.Label(root, text="", font=("Arial", 18))
     welcome_label.pack(pady=50)
 
-    card_info_frame = tk.Frame(root)  # Frame for displaying card information
+    card_info_frame = tk.Frame(root)
 
     display_home()
 
