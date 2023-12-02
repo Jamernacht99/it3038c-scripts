@@ -1,8 +1,14 @@
+import os
 import tkinter as tk
 import json
 from tkinter import ttk
 from datetime import datetime
 from tkcalendar import Calendar
+
+ACTIVITIES_FOLDER = "activities"
+
+if not os.path.exists(ACTIVITIES_FOLDER):
+    os.makedirs(ACTIVITIES_FOLDER)
 
 def update_activity_tree(activity_tree, card_name, activity_data):
     # Load the updated activities and clear the current treeview
@@ -15,8 +21,10 @@ def update_activity_tree(activity_tree, card_name, activity_data):
 
 # Function remains unchanged
 def add_activity():
-    # Body of add_activity function remains the same
-    pass  # Replace 'pass' with the actual implementation
+    if detail_frame.winfo_ismapped():
+        selected_item = card_tree.focus()
+        card_name = card_tree.item(selected_item)['values'][0]
+        display_activity_detail(card_name)
 
 def display_home():
     welcome_label.config(text="Welcome to Finance Tracker!")
@@ -38,6 +46,10 @@ def select_option(option):
     else:
         clear_label()
         print(f"Selected: {option}")
+    
+    # Hide the detail frame when any navigation button is clicked, if it exists
+    detail_frame.pack_forget()
+
 
 def show_cards():
     card_info_frame.pack(side=tk.TOP)
@@ -54,35 +66,98 @@ def load_cards():
     except FileNotFoundError:
         display_cards([])
 
+
+
 def display_activity_detail(card_name):
-    detail_window = tk.Toplevel(root)
-    detail_window.title(f"Activities for {card_name}")
+    hide_cards()
+
+    global detail_frame
+    detail_frame = tk.Frame(root)
+    detail_frame.pack(fill=tk.BOTH, expand=True)
+
+    detail_label = tk.Label(detail_frame, text=f"Activities for {card_name}", font=("Arial", 14, "bold"))
+    detail_label.pack()
 
     activities = load_activities(card_name)
 
-    activity_tree = ttk.Treeview(detail_window, columns=("Date", "Amount", "Type", "Description"), show="headings")
+    table_frame = tk.Frame(detail_frame)
+    table_frame.pack(expand=True)
+
+    activity_tree = ttk.Treeview(table_frame, columns=("Date", "Amount", "Description", "Type"), show="headings")
     activity_tree.heading("Date", text="Date")
     activity_tree.heading("Amount", text="Amount")
-    activity_tree.heading("Type", text="Type")
     activity_tree.heading("Description", text="Description")
+    activity_tree.heading("Type", text="Type")
 
     for activity in activities:
-        activity_tree.insert("", "end", values=(activity['date'], activity['amount'], activity['type'], activity['description']))
+        activity_tree.insert("", "end", values=(activity['date'], "$" + activity['amount'], activity['description'], activity['type']))
 
-    activity_tree.pack(expand=True, fill=tk.BOTH)
+    activity_tree.pack(fill=tk.BOTH, expand=True)
 
-    add_activity_button = tk.Button(detail_window, text="Add Activity", command=lambda: display_add_activity_prompt(card_name, activity_tree))
-    add_activity_button.pack()
+    # Centering the table horizontally and positioning it at the top vertically
+    table_frame.pack(expand=True, padx=10, pady=(0, 0), fill=tk.BOTH)
+
+    back_button = tk.Button(detail_frame, text="Back", command=back_to_cards, bg="grey")
+    back_button.pack(side=tk.LEFT, padx=10, pady=10, anchor="sw")
+
+    add_activity_button = tk.Button(detail_frame, text="Add Activity", command=lambda: display_add_activity_prompt(card_name, activity_tree), bg="green")
+    add_activity_button.pack(side=tk.RIGHT, padx=10, pady=10, anchor="se")
+
+    # Calculating totals for credit and debit
+    credit_total = 0
+    debit_total = 0
+
+    for activity in activities:
+        amount = float(activity['amount'].replace('$', ''))
+        if activity['type'] == 'Credit (-)':
+            credit_total += amount
+        elif activity['type'] == 'Debit (+)':
+            debit_total += amount
+
+    total_frame = tk.Frame(detail_frame)
+    total_frame.pack(fill=tk.X, pady=10)
+
+    # Calculate total balance by adding credit and subtracting debit
+    total_balance = credit_total - debit_total
+
+    # Update the corresponding credit card balance in cards.json
+    update_card_balance(card_name, total_balance)
+
+    total_label = tk.Label(total_frame, text=f"Total Balance: ${total_balance:.2f}", font=("Arial", 12))
+    total_label.pack(side=tk.BOTTOM, padx=10)
+
+def back_to_cards():
+    detail_frame.pack_forget()
+    show_cards()
+
+def update_card_balance(card_name, new_balance):
+    try:
+        with open("cards.json", "r") as file:
+            card_info = json.load(file)
+    except FileNotFoundError:
+        card_info = []
+
+    # Update the balance for the corresponding card
+    for card in card_info:
+        if card['name'] == card_name:
+            card['balance'] = f"${new_balance:.2f}"
+            break
+
+    # Save the updated card information back to cards.json
+    save_cards(card_info)
+
 
 def load_activities(card_name):
     try:
-        with open(f"{card_name}_activities.json", "r") as file:
+        file_path = os.path.join(ACTIVITIES_FOLDER, f"{card_name}_activities.json")
+        with open(file_path, "r") as file:
             return json.load(file)
     except FileNotFoundError:
         return []
 
 def save_activities(card_name, activities):
-    with open(f"{card_name}_activities.json", "w") as file:
+    file_path = os.path.join(ACTIVITIES_FOLDER, f"{card_name}_activities.json")
+    with open(file_path, "w") as file:
         json.dump(activities, file, indent=4)
 
 def on_select_card(event):
@@ -150,6 +225,23 @@ def display_add_card_prompt():
     add_button = tk.Button(add_card_window, text="Add Card", command=get_due_date)
     add_button.pack(padx=10, pady=10)
 
+def add_card(name, due_date, window):
+    try:
+        with open("cards.json", "r") as file:
+            card_info = json.load(file)
+        save_activities(name, [])
+    except FileNotFoundError:
+        card_info = []
+    card_info.append({"name": name, "balance": "$0.00", "due_date": due_date})
+    save_cards(card_info)
+    display_cards(card_info)
+    window.destroy()  # Close the add card window after adding the card
+
+def save_cards(card_info):
+    with open("cards.json", "w") as file:
+        json.dump(card_info, file, indent=4)
+
+
 def display_add_activity_prompt(card_name, activity_tree):
     add_activity_window = tk.Toplevel(root)
     add_activity_window.title(f"Add Activity for {card_name}")
@@ -185,8 +277,8 @@ def display_add_activity_prompt(card_name, activity_tree):
     type_label = tk.Label(add_activity_window, text="Type:")
     type_label.pack(padx=10, pady=5)
     type_var = tk.StringVar(add_activity_window)
-    type_var.set("Credit")
-    type_dropdown = tk.OptionMenu(add_activity_window, type_var, "Credit", "Debit")
+    type_var.set("Credit (-)")
+    type_dropdown = tk.OptionMenu(add_activity_window, type_var, "Credit (-)", "Debit (+)")
     type_dropdown.pack(padx=10, pady=5)
 
     description_label = tk.Label(add_activity_window, text="Description:")
@@ -209,6 +301,8 @@ def display_add_activity_prompt(card_name, activity_tree):
         save_activity(card_name, activity_data)
         update_activity_tree(activity_tree, card_name, activity_data)
         add_activity_window.destroy()
+        back_to_cards()
+        display_activity_detail(card_name)
 
     add_activity_button = tk.Button(add_activity_window, text="Add Activity", command=add_activity)
     add_activity_button.pack(padx=10, pady=10)
@@ -222,7 +316,7 @@ def create_menu():
     global root, card_info_frame
     root = tk.Tk()
     root.title("Finance Tracker")
-    root.geometry("800x600")
+    root.geometry("1080x800")
 
     navbar_frame = tk.Frame(root, bg="black")
     navbar_frame.pack(fill=tk.X)

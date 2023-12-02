@@ -1,7 +1,12 @@
 [
     {
-        "name": "Asparagus",
-        "balance": "$0.00",
-        "due_date": "01"
+        "name": "test",
+        "balance": "$1232.00",
+        "due_date": "02"
+    },
+    {
+        "name": "test2",
+        "balance": "$21.00",
+        "due_date": "02"
     }
 ]
