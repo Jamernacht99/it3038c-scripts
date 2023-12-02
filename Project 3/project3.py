@@ -1,7 +1,7 @@
 import tkinter as tk
 import json
 from tkinter import ttk
-from datetime import datetime, timedelta
+from datetime import datetime
 from tkcalendar import Calendar
 
 def display_home():
@@ -18,9 +18,9 @@ def select_option(option):
     elif option == "Cards":
         clear_label()
         show_cards()
-    elif option == "Savings":
+    elif option == "Checking":
         clear_label()
-        print("Savings functionality to be added")
+        print("Checking functionality to be added")
     else:
         clear_label()
         print(f"Selected: {option}")
@@ -40,6 +40,42 @@ def load_cards():
     except FileNotFoundError:
         display_cards([])  # Display an empty table if no cards exist
 
+def display_activity_detail(card_name):
+    detail_window = tk.Toplevel(root)
+    detail_window.title(f"Activities for {card_name}")
+
+    activities = load_activities(card_name)
+
+    activity_tree = ttk.Treeview(detail_window, columns=("Date", "Amount", "Type", "Description"), show="headings")
+    activity_tree.heading("Date", text="Date")
+    activity_tree.heading("Amount", text="Amount")
+    activity_tree.heading("Type", text="Type")
+    activity_tree.heading("Description", text="Description")
+
+    for activity in activities:
+        activity_tree.insert("", "end", values=(activity['date'], activity['amount'], activity['type'], activity['description']))
+
+    activity_tree.pack(expand=True, fill=tk.BOTH)
+
+    add_activity_button = tk.Button(detail_window, text="Add Activity", command=lambda: display_add_activity_prompt(card_name))
+    add_activity_button.pack()
+
+def load_activities(card_name):
+    try:
+        with open(f"{card_name}_activities.json", "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
+
+def save_activities(card_name, activities):
+    with open(f"{card_name}_activities.json", "w") as file:
+        json.dump(activities, file, indent=4)
+
+def on_select_card(event):
+    selected_item = card_tree.focus()
+    card_name = card_tree.item(selected_item)['values'][0]
+
+    display_activity_detail(card_name)
 
 def display_cards(card_info):
     for widget in card_info_frame.winfo_children():
@@ -48,6 +84,7 @@ def display_cards(card_info):
     title_label = tk.Label(card_info_frame, text="Credit Cards", font=("Arial", 14, "bold"))
     title_label.pack()
 
+    global card_tree
     card_tree = ttk.Treeview(card_info_frame, columns=("Name", "Balance", "Next Due Date"), show="headings")
     card_tree.heading("Name", text="Name")
     card_tree.heading("Balance", text="Balance")
@@ -57,11 +94,12 @@ def display_cards(card_info):
         next_due_date = get_next_due_date(card['due_date'])
         card_tree.insert("", "end", values=(card['name'], card['balance'], next_due_date))
 
+    card_tree.bind("<Double-1>", on_select_card)  # Bind double-click event to the card_tree
+
     card_tree.pack(expand=True, fill=tk.BOTH)
 
     add_card_button = tk.Button(card_info_frame, text="Add Card", command=display_add_card_prompt)
     add_card_button.pack()
-
 
 def get_next_due_date(due_date):
     current_date = datetime.now()
@@ -101,42 +139,77 @@ def display_add_card_prompt():
     add_button = tk.Button(add_card_window, text="Add Card", command=get_due_date)
     add_button.pack(padx=10, pady=10)
 
+def display_add_activity_prompt(card_name):
+    add_activity_window = tk.Toplevel(root)
+    add_activity_window.title(f"Add Activity for {card_name}")
 
-def add_card(name, due_date, window):
-    if not is_valid_name(name):
-        print("Invalid name. Please enter a valid name.")
-        return
+    date_label = tk.Label(add_activity_window, text="Date:")
+    date_label.pack(padx=10, pady=5)
+    # Create a Calendar widget to select the date
+    cal = Calendar(add_activity_window, selectmode="day", date_pattern="dd/MM/yyyy")
+    cal.pack(padx=10, pady=5)
 
-    if not is_valid_day(due_date):
-        print("Invalid day. Please enter a valid two-digit day number.")
-        return
-
-    try:
-        with open("cards.json", "r") as file:
-            card_info = json.load(file)
-    except FileNotFoundError:
-        card_info = []
-
-    card_info.append({"name": name, "balance": "$0.00", "due_date": due_date})
-    save_cards(card_info)
-    display_cards(card_info)
-
-    window.destroy()  # Close the add card window after adding the card
-
-
-def save_cards(card_info):
-    with open("cards.json", "w") as file:
-        json.dump(card_info, file, indent=4)
-
-def is_valid_name(name):
-    # Add your validation criteria here
-    if len(name) < 3 or len(name) > 20:
+    def validate_amount_input(value):
+        if value == "":
+            return True
+        try:
+            if '.' not in value:
+                float(value + '.00')
+                return True
+            # Otherwise, validate the input as usual
+            else:
+                float(value)
+                if value.count(".") <= 1:
+                    if len(value.split(".")[-1]) <= 2:
+                        return True
+        except ValueError:
+            return False
         return False
-    return True
 
-def is_valid_day(day):
-    return day.isdigit() and len(day) == 2
+    amount_label = tk.Label(add_activity_window, text="Amount:")
+    amount_label.pack(padx=10, pady=5)
+    amount_var = tk.StringVar()
+    validate_amount = (add_activity_window.register(validate_amount_input), "%P")
+    amount_entry = tk.Entry(add_activity_window, textvariable=amount_var, validate="key", validatecommand=validate_amount)
+    amount_entry.pack(padx=10, pady=5)
 
+    type_label = tk.Label(add_activity_window, text="Type:")
+    type_label.pack(padx=10, pady=5)
+    type_var = tk.StringVar(add_activity_window)
+    type_var.set("Credit")  # Default value
+    type_dropdown = tk.OptionMenu(add_activity_window, type_var, "Credit", "Debit")
+    type_dropdown.pack(padx=10, pady=5)
+
+    description_label = tk.Label(add_activity_window, text="Description:")
+    description_label.pack(padx=10, pady=5)
+    description_entry = tk.Entry(add_activity_window)
+    description_entry.pack(padx=10, pady=5)
+
+    def add_activity():
+        entered_amount = amount_entry.get()
+        if '.' not in entered_amount:
+            entered_amount += '.00'  # Append ".00" if no decimal is present
+
+        activity_data = {
+            "date": cal.get_date(),
+            "amount": entered_amount,
+        "type": type_var.get(),
+        "description": description_entry.get()
+    }
+
+        save_activity(card_name, activity_data)
+        add_activity_window.destroy()
+        display_activity_detail(card_name)  # Refresh the activity list after adding
+
+
+    add_activity_button = tk.Button(add_activity_window, text="Add Activity", command=add_activity)
+    add_activity_button.pack(padx=10, pady=10)
+
+
+def save_activity(card_name, activity_data):
+    activities = load_activities(card_name)
+    activities.append(activity_data)
+    save_activities(card_name, activities)
 def create_menu():
     global root, card_info_frame
     root = tk.Tk()
@@ -154,9 +227,9 @@ def create_menu():
                              command=lambda: select_option("Cards"))
     cards_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-    savings_button = tk.Button(navbar_frame, text="Savings", bg="white", fg="black", padx=10, pady=5,
-                               command=lambda: select_option("Savings"))
-    savings_button.pack(side=tk.LEFT, padx=10, pady=10)
+    Checking_button = tk.Button(navbar_frame, text="Checking", bg="white", fg="black", padx=10, pady=5,
+                               command=lambda: select_option("Checking"))
+    Checking_button.pack(side=tk.LEFT, padx=10, pady=10)
 
     global welcome_label
     welcome_label = tk.Label(root, text="", font=("Arial", 18))
