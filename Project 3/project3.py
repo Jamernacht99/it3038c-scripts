@@ -4,6 +4,7 @@ import json
 from tkinter import ttk
 from datetime import datetime
 from tkinter import ttk
+from tkcalendar import Calendar
 import tkinter.messagebox as messagebox
 import calendar
 
@@ -37,12 +38,19 @@ def display_home():
     current_year = today.year
     current_month = today.month
 
+    # Get the month's name
+    month_name = today.strftime("%B")
+
     # Create a calendar for the current month
     cal = calendar.monthcalendar(current_year, current_month)
 
     # Create a frame to display the calendar
     calendar_frame = tk.Frame(root)
     calendar_frame.pack()
+
+    # Add the month's name at the top
+    month_label = tk.Label(calendar_frame, text=month_name, font=("Arial", 14, "bold"))
+    month_label.grid(row=0, columnspan=7)  # Span across all columns
 
     # Create weekday labels
     weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -51,19 +59,19 @@ def display_home():
         label = tk.Label(calendar_frame, text=day, width=day_label_width, borderwidth=2, relief="solid")
         label.grid(row=0, column=weekdays.index(day))
 
-    # Populate the calendar with activity data (dummy data used here)
-    activities_data = {
-        1: ["Activity A", "Activity F"],
-        5: ["Activity B"],
-        8: ["Activity C", "Activity G"],
-        17: ["Activity D"],
-        25: ["Activity E", "Activity H"]
-    }
+    # Read card information from cards.json
+    try:
+        with open("cards.json", "r") as file:
+            card_info = json.load(file)
+    except FileNotFoundError:
+        card_info = []
 
-    # Find the maximum number of events in a day
-    max_events_count = max(len(events) for events in activities_data.values()) if activities_data else 0
+    # Convert due dates to integers for comparison
+    card_due_dates = {int(card['due_date']): card['name'] for card in card_info}
+    min_card_width = 10
 
-    # Display calendar days and activities
+
+    # Display calendar days and card due dates
     for week_num, week in enumerate(cal):
         for weekday, day in enumerate(week):
             if day != 0:
@@ -76,23 +84,25 @@ def display_home():
                 day_label = tk.Label(day_frame, text=str(day))
                 day_label.pack()
 
-                # Check if there are any activities for this day and display them
-                if day in activities_data:
-                    for activity in activities_data[day]:
-                        activity_label = tk.Label(day_frame, text=activity)
-                        activity_label.pack()
+                # Check if the day matches a card due date and display it with balance-based colors
+                if day in card_due_dates:
+                    card_name = card_due_dates[day]
+                    matching_cards = [card for card in card_info if card['name'] == card_name]
+                    if matching_cards:
+                        card_info_for_day = matching_cards[0]
+                        balance = float(card_info_for_day['balance'].replace('$', ''))
+                        if balance <= 0:
+                            card_label = tk.Label(day_frame, text=card_name.ljust(min_card_width), bg="lightgreen")
+                        else:
+                            card_label = tk.Label(day_frame, text=card_name.ljust(min_card_width), bg="lightcoral")
+                        card_label.pack()
 
-                    # Create invisible labels to fill up the space
-                    for _ in range(len(activities_data[day]), max_events_count):
-                        empty_label = tk.Label(day_frame, text=" ", bg=day_frame["bg"], fg=day_frame["bg"])
-                        empty_label.pack()
+                # Add invisible labels to fill up the space
                 else:
-                    # Create invisible labels to fill up the space
-                    for _ in range(max_events_count):
-                        empty_label = tk.Label(day_frame, text=" ", bg=day_frame["bg"], fg=day_frame["bg"])
-                        empty_label.pack()
+                    empty_label = tk.Label(day_frame, text="_________", bg=day_frame["bg"], fg=day_frame["bg"])
+                    empty_label.pack()
 
-                        
+                      
 def clear_label():
     welcome_label.config(text="")
     hide_cards()
