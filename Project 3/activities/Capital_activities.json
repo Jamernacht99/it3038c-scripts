@@ -3,12 +3,12 @@
         "date": "02/12/2023",
         "amount": "121.00",
         "type": "Credit (-)",
-        "description": "credit"
+        "description": "Bills"
     },
     {
         "date": "02/12/2023",
         "amount": "100.00",
         "type": "Debit (+)",
-        "description": "payment"
+        "description": "Payment"
     }
 ]

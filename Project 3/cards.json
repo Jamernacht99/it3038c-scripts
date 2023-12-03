@@ -1,16 +1,16 @@
 [
     {
-        "name": "test21",
-        "balance": "$1232.00",
+        "name": "Capital",
+        "balance": "$21.00",
         "due_date": "04"
     },
     {
-        "name": "test3",
-        "balance": "$21.00",
+        "name": "Citi",
+        "balance": "$0.00",
         "due_date": "13"
     },
     {
-        "name": "test22",
+        "name": "American",
         "balance": "$0.00",
         "due_date": "09"
     }

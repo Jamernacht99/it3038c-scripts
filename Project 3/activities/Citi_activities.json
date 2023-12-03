@@ -1,0 +1,14 @@
+[
+    {
+        "date": "02/12/2023",
+        "amount": "1232.00",
+        "type": "Credit (-)",
+        "description": "Groceries"
+    },
+    {
+        "date": "03/12/2023",
+        "amount": "1232.00",
+        "type": "Debit (+)",
+        "description": "Payment"
+    }
+]
