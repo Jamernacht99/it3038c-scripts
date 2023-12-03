@@ -66,6 +66,47 @@ def load_cards():
     except FileNotFoundError:
         display_cards([])
 
+def get_card_info_by_name(card_name):
+    try:
+        with open("cards.json", "r") as file:
+            card_info = json.load(file)
+            for card in card_info:
+                if card['name'] == card_name:
+                    return card
+    except FileNotFoundError:
+        return None
+
+def update_card_details(original_card_name, new_name, new_due_date):
+    try:
+        with open("cards.json", "r") as file:
+            card_info = json.load(file)
+    except FileNotFoundError:
+        card_info = []
+
+    # Find the card to be updated
+    for card in card_info:
+        if card['name'] == original_card_name:
+            # Update the card details
+            card['name'] = new_name
+            card['due_date'] = new_due_date
+            break
+
+    # Save the updated card information back to cards.json
+    back_to_cards()  # Unload the detail page
+    save_cards(card_info)
+
+    # Optionally, update the associated activities filename if the card name has changed
+    if original_card_name != new_name:
+        try:
+            old_activities_file = os.path.join(ACTIVITIES_FOLDER, f"{original_card_name}_activities.json")
+            new_activities_file = os.path.join(ACTIVITIES_FOLDER, f"{new_name}_activities.json")
+            os.rename(old_activities_file, new_activities_file)
+        except FileNotFoundError:
+            pass  # Handle the case where the activities file for the original card doesn't exist
+
+    # Reset the window upon successful update and load new information
+    # display_activity_detail(new_name)  # Load the updated card details
+
 
 
 def display_activity_detail(card_name):
@@ -75,8 +116,69 @@ def display_activity_detail(card_name):
     detail_frame = tk.Frame(root)
     detail_frame.pack(fill=tk.BOTH, expand=True)
 
-    detail_label = tk.Label(detail_frame, text=f"Activities for {card_name}", font=("Arial", 14, "bold"))
-    detail_label.pack()
+    card_info = get_card_info_by_name(card_name)
+    due_date = card_info['due_date']
+
+    # New label to display card name and due date
+    card_info_label = tk.Label(detail_frame, text=f"Credit Card: {card_name}\nDue Date: {due_date}", font=("Arial", 12, "bold"))
+    card_info_label.pack()
+
+    # Frame for buttons above the table
+    button_frame = tk.Frame(detail_frame)
+    button_frame.pack(fill=tk.X)
+
+    def edit_card_details():
+        edit_window = tk.Toplevel(root)
+        edit_window.title("Edit Card Details")
+
+        name_label = tk.Label(edit_window, text="Name:")
+        name_label.pack(padx=10, pady=5)
+        name_entry = tk.Entry(edit_window)
+        name_entry.insert(tk.END, card_name)  # Set initial value to current card name
+        name_entry.pack(padx=10, pady=5)
+
+        due_date_label = tk.Label(edit_window, text="Due Date (DD):")
+        due_date_label.pack(padx=10, pady=5)
+        cal = Calendar(edit_window, selectmode="day", date_pattern="dd/MM/yyyy")
+        cal.pack(padx=10, pady=5)
+
+        # Extract day value from the due_date
+        due_day = int(due_date)
+
+        # Get today's date
+        today = datetime.now()
+
+        # Calculate the closest date to the current date with the same day value
+        if due_day >= today.day:
+            closest_date = today.replace(day=due_day)
+        else:
+            if today.month == 12:
+                closest_date = today.replace(year=today.year + 1, month=1, day=due_day)
+            else:
+                closest_date = today.replace(month=today.month + 1, day=due_day)
+
+        # Set the calendar date to the closest date
+        cal_date = closest_date.strftime("%d/%m/%Y")
+        cal.selection_set(cal_date)
+
+        def update_card():
+            new_name = name_entry.get()
+            new_due_date = cal.get_date().split("/")[0]
+            # Update the card details
+            update_card_details(card_name, new_name, new_due_date)
+            # Update the display to reflect the changes
+            display_activity_detail(new_name)
+            edit_window.destroy()
+
+        update_button = tk.Button(edit_window, text="Update", command=update_card)
+        update_button.pack(padx=10, pady=10)
+
+
+    edit_button = tk.Button(button_frame, text="Edit", command=edit_card_details, bg="Light Blue")
+    edit_button.pack(side=tk.LEFT, padx=10, pady=10)
+
+    delete_button = tk.Button(button_frame, text="Delete", command=back_to_cards, bg="Red")
+    delete_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
     activities = load_activities(card_name)
 
@@ -93,8 +195,6 @@ def display_activity_detail(card_name):
         activity_tree.insert("", "end", values=(activity['date'], "$" + activity['amount'], activity['description'], activity['type']))
 
     activity_tree.pack(fill=tk.BOTH, expand=True)
-
-    # Centering the table horizontally and positioning it at the top vertically
     table_frame.pack(expand=True, padx=10, pady=(0, 0), fill=tk.BOTH)
 
     back_button = tk.Button(detail_frame, text="Back", command=back_to_cards, bg="grey")
@@ -102,6 +202,7 @@ def display_activity_detail(card_name):
 
     add_activity_button = tk.Button(detail_frame, text="Add Activity", command=lambda: display_add_activity_prompt(card_name, activity_tree), bg="green")
     add_activity_button.pack(side=tk.RIGHT, padx=10, pady=10, anchor="se")
+
 
     # Calculating totals for credit and debit
     credit_total = 0
@@ -113,15 +214,14 @@ def display_activity_detail(card_name):
             credit_total += amount
         elif activity['type'] == 'Debit (+)':
             debit_total += amount
-
-    total_frame = tk.Frame(detail_frame)
-    total_frame.pack(fill=tk.X, pady=10)
-
     # Calculate total balance by adding credit and subtracting debit
     total_balance = credit_total - debit_total
 
     # Update the corresponding credit card balance in cards.json
     update_card_balance(card_name, total_balance)
+
+    total_frame = tk.Frame(detail_frame)
+    total_frame.pack(side=tk.BOTTOM, padx=10)
 
     total_label = tk.Label(total_frame, text=f"Total Balance: ${total_balance:.2f}", font=("Arial", 12))
     total_label.pack(side=tk.BOTTOM, padx=10)
