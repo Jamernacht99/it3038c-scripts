@@ -1,3 +1,4 @@
+
 # Finance Tracker Project
 
 This project is a Finance Tracker application built using Python and Tkinter, allowing users to manage credit card information, track due dates, and log financial activities.
@@ -31,10 +32,13 @@ Overall, the Finance Tracker not only consolidates credit card management but al
 
 To run this application, ensure you have Python installed. Clone this repository, navigate to the project directory, and run the `main.py` file.
 
-```bash
-git clone https://github.com/your-username/finance-tracker.git
-cd finance-tracker
-python main.py
+`bash`
+
+`git clone https://github.com/your-username/finance-tracker.git`
+
+`cd finance-tracker`
+
+`python main.py`
 
 ## Usage
 
