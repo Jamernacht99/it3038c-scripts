@@ -3,8 +3,9 @@ import tkinter as tk
 import json
 from tkinter import ttk
 from datetime import datetime
-from tkcalendar import Calendar
+from tkinter import ttk
 import tkinter.messagebox as messagebox
+import calendar
 
 
 ACTIVITIES_FOLDER = "activities"
@@ -30,8 +31,68 @@ def add_activity():
 
 def display_home():
     welcome_label.config(text="Welcome to Finance Tracker!")
-    hide_cards()
 
+    # Get the current date
+    today = datetime.now()
+    current_year = today.year
+    current_month = today.month
+
+    # Create a calendar for the current month
+    cal = calendar.monthcalendar(current_year, current_month)
+
+    # Create a frame to display the calendar
+    calendar_frame = tk.Frame(root)
+    calendar_frame.pack()
+
+    # Create weekday labels
+    weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    day_label_width = 8  # Adjust width as needed
+    for day in weekdays:
+        label = tk.Label(calendar_frame, text=day, width=day_label_width, borderwidth=2, relief="solid")
+        label.grid(row=0, column=weekdays.index(day))
+
+    # Populate the calendar with activity data (dummy data used here)
+    activities_data = {
+        1: ["Activity A", "Activity F"],
+        5: ["Activity B"],
+        8: ["Activity C", "Activity G"],
+        17: ["Activity D"],
+        25: ["Activity E", "Activity H"]
+    }
+
+    # Find the maximum number of events in a day
+    max_events_count = max(len(events) for events in activities_data.values()) if activities_data else 0
+
+    # Display calendar days and activities
+    for week_num, week in enumerate(cal):
+        for weekday, day in enumerate(week):
+            if day != 0:
+                # Get the width of the day header label
+                day_header_width = label.winfo_reqwidth()
+
+                day_frame = tk.Frame(calendar_frame, width=day_header_width, height=60, borderwidth=2, relief="solid")
+                day_frame.grid(row=week_num + 1, column=weekday)
+
+                day_label = tk.Label(day_frame, text=str(day))
+                day_label.pack()
+
+                # Check if there are any activities for this day and display them
+                if day in activities_data:
+                    for activity in activities_data[day]:
+                        activity_label = tk.Label(day_frame, text=activity)
+                        activity_label.pack()
+
+                    # Create invisible labels to fill up the space
+                    for _ in range(len(activities_data[day]), max_events_count):
+                        empty_label = tk.Label(day_frame, text=" ", bg=day_frame["bg"], fg=day_frame["bg"])
+                        empty_label.pack()
+                else:
+                    # Create invisible labels to fill up the space
+                    for _ in range(max_events_count):
+                        empty_label = tk.Label(day_frame, text=" ", bg=day_frame["bg"], fg=day_frame["bg"])
+                        empty_label.pack()
+
+                        
 def clear_label():
     welcome_label.config(text="")
     hide_cards()
