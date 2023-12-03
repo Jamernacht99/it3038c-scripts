@@ -30,7 +30,7 @@ Overall, the Finance Tracker not only consolidates credit card management but al
 
 ## Installation
 
-To run this application, ensure you have Python installed. Clone this repository, navigate to the project directory, and run the `main.py` file.
+To run this application, ensure you have Python installed. Clone this repository, navigate to the project directory, and run the `project3.py` file.
 
 `bash`
 
@@ -38,7 +38,7 @@ To run this application, ensure you have Python installed. Clone this repository
 
 `cd finance-tracker`
 
-`python main.py`
+`python project3.py`
 
 ## Usage
 
@@ -49,7 +49,7 @@ Upon running the application, a graphical interface opens with a navigation bar 
 
 ## Structure
 
-- `main.py`: Main script to launch the Finance Tracker application.
+- `project3.py`: Main script to launch the Finance Tracker application.
 - `cards.json`: JSON file storing credit card details.
 - `activities/`: Folder containing JSON files for each card's financial activities.
 
