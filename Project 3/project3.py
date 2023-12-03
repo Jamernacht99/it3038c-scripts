@@ -119,19 +119,29 @@ def clear_label():
     hide_cards()
 
 def select_option(option):
-    if option == "Home":
-        hide_cards()
-        display_home()
-    elif option == "Cards":
-        clear_label()
-        remove_calendar()
-        show_cards()
-    else:
-        clear_label()
-        print(f"Selected: {option}")
-    
-    # Hide the detail frame when any navigation button is clicked, if it exists
-    
+    try:
+        detail_frame.pack_forget()
+        if option == "Home":
+            hide_cards()
+            display_home()
+        elif option == "Cards":
+            clear_label()
+            remove_calendar()
+            show_cards()
+        else:
+            clear_label()
+            print(f"Selected: {option}")
+    except:
+        if option == "Home":
+            hide_cards()
+            display_home()
+        elif option == "Cards":
+            clear_label()
+            remove_calendar()
+            show_cards()
+        else:
+            clear_label()
+            print(f"Selected: {option}")
 
 
 def show_cards():
