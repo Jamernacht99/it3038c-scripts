@@ -4,6 +4,8 @@ import json
 from tkinter import ttk
 from datetime import datetime
 from tkcalendar import Calendar
+import tkinter.messagebox as messagebox
+
 
 ACTIVITIES_FOLDER = "activities"
 
@@ -40,9 +42,6 @@ def select_option(option):
     elif option == "Cards":
         clear_label()
         show_cards()
-    elif option == "Checking":
-        clear_label()
-        print("Checking functionality to be added")
     else:
         clear_label()
         print(f"Selected: {option}")
@@ -82,6 +81,10 @@ def update_card_details(original_card_name, new_name, new_due_date):
             card_info = json.load(file)
     except FileNotFoundError:
         card_info = []
+        
+    if any(card['name'] == new_name for card in card_info if card['name'] != original_card_name):
+        messagebox.showerror("Error", f"Card with name '{new_name}' already exists.")
+        return False
 
     # Find the card to be updated
     for card in card_info:
@@ -102,10 +105,7 @@ def update_card_details(original_card_name, new_name, new_due_date):
             new_activities_file = os.path.join(ACTIVITIES_FOLDER, f"{new_name}_activities.json")
             os.rename(old_activities_file, new_activities_file)
         except FileNotFoundError:
-            pass  # Handle the case where the activities file for the original card doesn't exist
-
-    # Reset the window upon successful update and load new information
-    # display_activity_detail(new_name)  # Load the updated card details
+            pass  
 
 
 
@@ -165,10 +165,11 @@ def display_activity_detail(card_name):
             new_name = name_entry.get()
             new_due_date = cal.get_date().split("/")[0]
             # Update the card details
-            update_card_details(card_name, new_name, new_due_date)
-            # Update the display to reflect the changes
-            display_activity_detail(new_name)
+            if update_card_details(card_name, new_name, new_due_date):
+                # Update the display to reflect the changes only if the update was successful
+                display_activity_detail(new_name)
             edit_window.destroy()
+
 
         update_button = tk.Button(edit_window, text="Update", command=update_card)
         update_button.pack(padx=10, pady=10)
@@ -329,13 +330,17 @@ def add_card(name, due_date, window):
     try:
         with open("cards.json", "r") as file:
             card_info = json.load(file)
-        save_activities(name, [])
+            # Check for duplicate card names before adding
+            if any(card['name'] == name for card in card_info):
+                messagebox.showerror("Error", f"Card with name '{name}' already exists.")
+                return
+            save_activities(name, [])
     except FileNotFoundError:
         card_info = []
     card_info.append({"name": name, "balance": "$0.00", "due_date": due_date})
     save_cards(card_info)
     display_cards(card_info)
-    window.destroy()  # Close the add card window after adding the card
+    window.destroy()  
 
 def save_cards(card_info):
     with open("cards.json", "w") as file:
@@ -428,10 +433,6 @@ def create_menu():
     cards_button = tk.Button(navbar_frame, text="Cards", bg="white", fg="black", padx=10, pady=5,
                              command=lambda: select_option("Cards"))
     cards_button.pack(side=tk.LEFT, padx=10, pady=10)
-
-    Checking_button = tk.Button(navbar_frame, text="Checking", bg="white", fg="black", padx=10, pady=5,
-                               command=lambda: select_option("Checking"))
-    Checking_button.pack(side=tk.LEFT, padx=10, pady=10)
 
     global welcome_label
     welcome_label = tk.Label(root, text="", font=("Arial", 18))
