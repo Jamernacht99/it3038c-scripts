@@ -191,6 +191,36 @@ def update_card_details(original_card_name, new_name, new_due_date):
         except FileNotFoundError:
             pass  
 
+def confirm_delete(card_name):
+    confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete the credit card '{card_name}'?")
+    if confirm:
+        delete_card(card_name)
+
+def delete_card(card_name):
+    try:
+        with open("cards.json", "r") as file:
+            card_info = json.load(file)
+    except FileNotFoundError:
+        card_info = []
+
+    # Find the card to delete
+    for card in card_info:
+        if card['name'] == card_name:
+            # Remove the card from the list
+            card_info.remove(card)
+            break
+
+    # Save the updated card information back to cards.json
+    save_cards(card_info)
+
+    # Remove associated activities file
+    activities_file_path = os.path.join(ACTIVITIES_FOLDER, f"{card_name}_activities.json")
+    try:
+        os.remove(activities_file_path)
+    except FileNotFoundError:
+        pass
+
+    back_to_cards()
 
 
 def display_activity_detail(card_name):
@@ -262,7 +292,7 @@ def display_activity_detail(card_name):
     edit_button = tk.Button(button_frame, text="Edit", command=edit_card_details, bg="Light Blue")
     edit_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-    delete_button = tk.Button(button_frame, text="Delete", command=back_to_cards, bg="Red")
+    delete_button = tk.Button(button_frame, text="Delete", command=lambda: confirm_delete(card_name), bg="Red")
     delete_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
     activities = load_activities(card_name)
