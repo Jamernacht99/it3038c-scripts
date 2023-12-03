@@ -131,7 +131,7 @@ def select_option(option):
         print(f"Selected: {option}")
     
     # Hide the detail frame when any navigation button is clicked, if it exists
-    detail_frame.pack_forget()
+    
 
 
 def show_cards():
