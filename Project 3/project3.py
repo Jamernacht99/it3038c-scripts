@@ -101,6 +101,7 @@ def create_calendar(root):
 
 def display_home():
     welcome_label.config(text="Welcome to Finance Tracker!")
+    remove_calendar()
     create_calendar(root)
 
 def remove_calendar():
