@@ -30,9 +30,7 @@ def add_activity():
         card_name = card_tree.item(selected_item)['values'][0]
         display_activity_detail(card_name)
 
-def display_home():
-    welcome_label.config(text="Welcome to Finance Tracker!")
-
+def create_calendar(root):
     # Get the current date
     today = datetime.now()
     current_year = today.year
@@ -70,7 +68,6 @@ def display_home():
     card_due_dates = {int(card['due_date']): card['name'] for card in card_info}
     min_card_width = 10
 
-
     # Display calendar days and card due dates
     for week_num, week in enumerate(cal):
         for weekday, day in enumerate(week):
@@ -102,6 +99,19 @@ def display_home():
                     empty_label = tk.Label(day_frame, text="_________", bg=day_frame["bg"], fg=day_frame["bg"])
                     empty_label.pack()
 
+def display_home():
+    welcome_label.config(text="Welcome to Finance Tracker!")
+    create_calendar(root)
+
+def remove_calendar():
+    # Find and destroy the calendar frame if it exists
+    for widget in root.winfo_children():
+        if isinstance(widget, tk.Frame) and widget.winfo_children():
+            # Check if this frame contains labels (calendar)
+            children = widget.winfo_children()
+            if isinstance(children[0], tk.Label) and children[0].cget("text").capitalize() in calendar.month_name:
+                widget.destroy()
+                break  
                       
 def clear_label():
     welcome_label.config(text="")
@@ -109,9 +119,11 @@ def clear_label():
 
 def select_option(option):
     if option == "Home":
+        hide_cards()
         display_home()
     elif option == "Cards":
         clear_label()
+        remove_calendar()
         show_cards()
     else:
         clear_label()
